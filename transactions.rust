@@ -1,0 +1,42 @@
+use jsonrpc_core::{IoHandler, Params, Value, Error};
+use jsonrpc_http_server::{ServerBuilder};
+use serde::{Deserialize};
+
+#[derive(Deserialize)]
+struct TransferParams {
+    from: String,
+    to: String,
+    amount: u64,
+}
+
+fn main() {
+    let mut io = IoHandler::new();
+
+    // Add the 'transferTransaction' method
+    io.add_method("transferTransaction", |params: Params| {
+        // Parse the incoming params
+        let transfer: TransferParams = match params.parse() {
+            Ok(p) => p,
+            Err(_) => return futures::future::ok(Value::String("Invalid parameters".into())),
+        };
+
+        // Call your transaction logic here
+        println!(
+            "Transferring {} units from {} to {}",
+            transfer.amount, transfer.from, transfer.to
+        );
+
+        // Here you would integrate with your backend blockchain logic
+        // For now, mock a response
+        futures::future::ok(Value::String("Transaction Successful".into()))
+    });
+
+    // Start the HTTP RPC server
+    let server = ServerBuilder::new(io)
+        .start_http(&"127.0.0.1:3030".parse().unwrap())
+        .expect("Unable to start RPC server");
+
+    println!("RPC server running on http://127.0.0.1:3030");
+
+    server.wait();
+}
